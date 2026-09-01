@@ -2,7 +2,7 @@
 
 Kotlin / Jetpack Compose look-alike of the Marriott Bonvoy Android app. Sign-in is stubbed;
 stays, points balance and hotel search are local demo data. **Redeem points** is the only
-screen that talks to a backend: `POST {BACKEND_BASE_URL}/bonvoy/points/redeem`.
+screen that talks to a backend: `POST {BACKEND_BASE_URL}/api/bonvoy/points/redeem` (the `bonvoy` vertical in `event-driven-devin`).
 
 ## Build
 
@@ -16,7 +16,7 @@ Requires JDK 17 and an Android SDK (`ANDROID_HOME` or `local.properties` → `sd
 
 ## Backend URL
 
-Baked in at build time as `BuildConfig.BACKEND_BASE_URL`. Default is `http://10.0.2.2:8000`
+Baked in at build time as `BuildConfig.BACKEND_BASE_URL`. Default is `http://10.0.2.2:3000`
 (the emulator's alias for the host machine). Override with either:
 
 ```sh
