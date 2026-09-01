@@ -34,7 +34,7 @@ class BonvoyApi(private val baseUrl: String = BuildConfig.BACKEND_BASE_URL) {
             .put("hotel", hotel.name)
             .put("nights", nights)
             .put("points", hotel.pointsPerNight * nights)
-            .put("devinOrgId", BuildConfig.DEVIN_ORG_ID)
+            .apply { if (BuildConfig.DEVIN_ORG_ID.isNotBlank()) put("devinOrgId", BuildConfig.DEVIN_ORG_ID) }
             .toString()
             .toRequestBody(json)
 
