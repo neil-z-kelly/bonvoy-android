@@ -6,6 +6,8 @@ plugins {
 
 val bonvoyBaseUrl: String =
     System.getenv("BONVOY_BASE_URL") ?: (project.findProperty("bonvoyBaseUrl") as String)
+val devinOrgId: String =
+    System.getenv("DEVIN_ORG_ID") ?: (project.findProperty("devinOrgId") as String)
 
 android {
     namespace = "com.marriott.bonvoy"
@@ -18,6 +20,7 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "BACKEND_BASE_URL", "\"$bonvoyBaseUrl\"")
+        buildConfigField("String", "DEVIN_ORG_ID", "\"$devinOrgId\"")
     }
 
     buildTypes {

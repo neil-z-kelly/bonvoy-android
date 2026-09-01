@@ -28,12 +28,13 @@ class BonvoyApi(private val baseUrl: String = BuildConfig.BACKEND_BASE_URL) {
     private val json = "application/json; charset=utf-8".toMediaType()
 
     fun redeemPoints(memberNumber: String, hotel: Hotel, nights: Int): RedemptionResult {
-        val url = "${baseUrl.trimEnd('/')}/bonvoy/points/redeem"
+        val url = "${baseUrl.trimEnd('/')}/api/bonvoy/points/redeem"
         val body = JSONObject()
             .put("member_number", memberNumber.replace(" ", ""))
             .put("hotel", hotel.name)
             .put("nights", nights)
             .put("points", hotel.pointsPerNight * nights)
+            .apply { if (BuildConfig.DEVIN_ORG_ID.isNotBlank()) put("devinOrgId", BuildConfig.DEVIN_ORG_ID) }
             .toString()
             .toRequestBody(json)
 
@@ -51,9 +52,9 @@ class BonvoyApi(private val baseUrl: String = BuildConfig.BACKEND_BASE_URL) {
             }
             val obj = JSONObject(text)
             return RedemptionResult(
-                confirmation = obj.getString("confirmation"),
-                pointsDebited = obj.getInt("points_debited"),
-                newBalance = obj.getInt("new_balance"),
+                confirmation = obj.getString("confirmationNumber"),
+                pointsDebited = obj.getInt("pointsDebited"),
+                newBalance = obj.getInt("newBalance"),
             )
         }
     }
