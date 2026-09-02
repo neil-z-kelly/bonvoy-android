@@ -69,7 +69,14 @@ fun HomeScreen(onSignOut: () -> Unit) {
 
     val hotelToRedeem = redeemHotel?.let { name -> DemoData.hotels.firstOrNull { it.name == name } }
     if (hotelToRedeem != null) {
-        RedeemScreen(hotel = hotelToRedeem, onBack = { redeemHotel = null })
+        RedeemScreen(
+            hotel = hotelToRedeem,
+            onBack = { redeemHotel = null },
+            onBackToSearch = {
+                redeemHotel = null
+                tab = Tab.Search
+            },
+        )
         return
     }
 

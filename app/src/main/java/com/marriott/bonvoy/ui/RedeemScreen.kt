@@ -1,7 +1,6 @@
 package com.marriott.bonvoy.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,6 +50,7 @@ import com.marriott.bonvoy.data.Hotel
 fun RedeemScreen(
     hotel: Hotel,
     onBack: () -> Unit,
+    onBackToSearch: () -> Unit,
     viewModel: RedeemViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,7 +111,7 @@ fun RedeemScreen(
             }
 
             when (val s = state) {
-                RedeemState.Idle, is RedeemState.Failure -> {
+                RedeemState.Idle -> {
                     Button(
                         onClick = { viewModel.redeem(hotel, nights) },
                         modifier = Modifier
@@ -119,7 +120,16 @@ fun RedeemScreen(
                         shape = RoundedCornerShape(4.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BonvoyColors.Ink),
                     ) { Text("REDEEM ${totalPoints.formatPoints()} POINTS", style = MaterialTheme.typography.labelLarge) }
-                    if (s is RedeemState.Failure) RawErrorDump(s.error)
+                }
+                is RedeemState.Failure -> {
+                    RedemptionUnavailableCard(
+                        failure = s,
+                        onRetry = { viewModel.redeem(hotel, nights) },
+                        onBackToSearch = {
+                            viewModel.reset()
+                            onBackToSearch()
+                        },
+                    )
                 }
                 RedeemState.Loading -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = BonvoyColors.Ink)
@@ -142,26 +152,60 @@ fun RedeemScreen(
 }
 
 @Composable
-private fun RawErrorDump(error: Throwable) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
-            .padding(12.dp),
+private fun RedemptionUnavailableCard(
+    failure: RedeemState.Failure,
+    onRetry: () -> Unit,
+    onBackToSearch: () -> Unit,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = BonvoyColors.White),
+        shape = RoundedCornerShape(12.dp),
     ) {
-        Text(
-            "ERROR: ${error::class.java.name}",
-            color = BonvoyColors.White,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-        )
-        Text(
-            error.stackTraceToString(),
-            color = BonvoyColors.White,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 10.sp,
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-        )
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Info, contentDescription = null, tint = BonvoyColors.Gold)
+                Spacer(Modifier.width(8.dp))
+                Text(failure.title, style = MaterialTheme.typography.headlineMedium)
+            }
+            Text(failure.body, color = BonvoyColors.Grey, style = MaterialTheme.typography.bodyMedium)
+            Button(
+                onClick = onRetry,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(4.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BonvoyColors.Ink),
+            ) {
+                Text("RETRY", style = MaterialTheme.typography.labelLarge)
+            }
+            OutlinedButton(
+                onClick = onBackToSearch,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+            ) {
+                Text("BACK TO HOTEL SEARCH", color = BonvoyColors.Ink)
+            }
+            HorizontalDivider(color = BonvoyColors.Stone)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    "Support details",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = BonvoyColors.Grey,
+                )
+                failure.supportDetails.forEach { (label, value) ->
+                    Text(
+                        "$label: $value",
+                        color = BonvoyColors.Grey,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.sp,
+                    )
+                }
+            }
+        }
     }
 }
