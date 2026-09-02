@@ -5,12 +5,51 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class BackendException(val statusCode: Int, val rawBody: String, url: String) :
-    IOException("HTTP $statusCode from $url\n$rawBody")
+class BackendException(
+    val statusCode: Int,
+    val error: String?,
+    val backendMessage: String?,
+    val code: String?,
+    val requestId: String?,
+    val rawBody: String,
+    url: String,
+) : IOException("HTTP $statusCode from $url") {
+    companion object {
+        fun fromResponse(statusCode: Int, body: String, url: String): BackendException {
+            return try {
+                val json = JSONObject(body)
+                fun optionalValue(key: String): String? =
+                    json.optString(key, "")
+                        .takeUnless { it.isEmpty() || json.isNull(key) }
+
+                BackendException(
+                    statusCode = statusCode,
+                    error = optionalValue("error"),
+                    backendMessage = optionalValue("message"),
+                    code = optionalValue("code"),
+                    requestId = optionalValue("requestId"),
+                    rawBody = body,
+                    url = url,
+                )
+            } catch (_: JSONException) {
+                BackendException(
+                    statusCode = statusCode,
+                    error = null,
+                    backendMessage = null,
+                    code = null,
+                    requestId = null,
+                    rawBody = body,
+                    url = url,
+                )
+            }
+        }
+    }
+}
 
 data class RedemptionResult(
     val confirmation: String,
@@ -53,7 +92,7 @@ class BonvoyApi(private val baseUrl: String = BuildConfig.BACKEND_BASE_URL) {
         client.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
-                throw BackendException(response.code, text, url)
+                throw BackendException.fromResponse(response.code, text, url)
             }
             val obj = JSONObject(text)
             return RedemptionResult(
