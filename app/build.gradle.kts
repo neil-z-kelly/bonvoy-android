@@ -8,6 +8,9 @@ val bonvoyBaseUrl: String =
     System.getenv("BONVOY_BASE_URL") ?: (project.findProperty("bonvoyBaseUrl") as String)
 val devinOrgId: String =
     System.getenv("DEVIN_ORG_ID") ?: (project.findProperty("devinOrgId") as String)
+val bonvoyDemoToken: String =
+    System.getenv("BONVOY_DEMO_TOKEN")
+        ?: (project.findProperty("bonvoyDemoToken") as String? ?: "")
 
 android {
     namespace = "com.marriott.bonvoy"
@@ -21,6 +24,7 @@ android {
         versionName = "1.0"
         buildConfigField("String", "BACKEND_BASE_URL", "\"$bonvoyBaseUrl\"")
         buildConfigField("String", "DEVIN_ORG_ID", "\"$devinOrgId\"")
+        buildConfigField("String", "DEMO_TOKEN", "\"$bonvoyDemoToken\"")
     }
 
     buildTypes {

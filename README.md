@@ -26,6 +26,18 @@ BONVOY_BASE_URL=https://demo.example.com ./gradlew assembleDebug
 
 The active URL is shown on the **Account** tab.
 
+## Presenter token
+
+The backend only raises a Slack alert and a Devin session for requests carrying
+`X-Bonvoy-Demo-Token`, which the app sends only when built with the token:
+
+```sh
+./gradlew assembleDebug -PbonvoyBaseUrl=https://devindemos.com -PbonvoyDemoToken=<token>
+```
+
+Leave it off for development and for verifying a fix — the redemption still
+fails the same way, it just does not page anyone.
+
 ## Run on the emulator
 
 ```sh

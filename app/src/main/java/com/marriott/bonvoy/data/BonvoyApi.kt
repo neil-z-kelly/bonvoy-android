@@ -43,6 +43,11 @@ class BonvoyApi(private val baseUrl: String = BuildConfig.BACKEND_BASE_URL) {
             .post(body)
             .header("Accept", "application/json")
             .header("X-Bonvoy-Client", "android/${BuildConfig.VERSION_NAME}")
+            .apply {
+                if (BuildConfig.DEMO_TOKEN.isNotBlank()) {
+                    header("X-Bonvoy-Demo-Token", BuildConfig.DEMO_TOKEN)
+                }
+            }
             .build()
 
         client.newCall(request).execute().use { response ->
