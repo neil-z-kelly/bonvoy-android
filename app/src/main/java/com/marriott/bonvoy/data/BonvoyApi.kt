@@ -10,7 +10,27 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 class BackendException(val statusCode: Int, val rawBody: String, url: String) :
-    IOException("HTTP $statusCode from $url\n$rawBody")
+    IOException("HTTP $statusCode from $url\n$rawBody") {
+    val errorName: String?
+    val serverMessage: String?
+    val code: String?
+    val requestId: String?
+
+    init {
+        var body: JSONObject? = null
+        try {
+            body = JSONObject(rawBody)
+        } catch (_: Exception) {
+        }
+        errorName = body?.optionalString("error")
+        serverMessage = body?.optionalString("message")
+        code = body?.optionalString("code")
+        requestId = body?.optionalString("requestId")
+    }
+}
+
+private fun JSONObject.optionalString(key: String): String? =
+    if (has(key) && !isNull(key)) optString(key).takeIf { it.isNotBlank() } else null
 
 data class RedemptionResult(
     val confirmation: String,

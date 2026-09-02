@@ -1,7 +1,6 @@
 package com.marriott.bonvoy.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -110,7 +111,7 @@ fun RedeemScreen(
             }
 
             when (val s = state) {
-                RedeemState.Idle, is RedeemState.Failure -> {
+                RedeemState.Idle -> {
                     Button(
                         onClick = { viewModel.redeem(hotel, nights) },
                         modifier = Modifier
@@ -119,8 +120,12 @@ fun RedeemScreen(
                         shape = RoundedCornerShape(4.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BonvoyColors.Ink),
                     ) { Text("REDEEM ${totalPoints.formatPoints()} POINTS", style = MaterialTheme.typography.labelLarge) }
-                    if (s is RedeemState.Failure) RawErrorDump(s.error)
                 }
+                is RedeemState.Failure -> RedemptionUnavailableCard(
+                    ui = s.error.toRedeemErrorUi(),
+                    onRetry = { viewModel.redeem(hotel, nights) },
+                    onBackToSearch = { viewModel.reset(); onBack() },
+                )
                 RedeemState.Loading -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = BonvoyColors.Ink)
                 }
@@ -142,26 +147,87 @@ fun RedeemScreen(
 }
 
 @Composable
-private fun RawErrorDump(error: Throwable) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
-            .padding(12.dp),
+private fun RedemptionUnavailableCard(
+    ui: RedeemErrorUi,
+    onRetry: () -> Unit,
+    onBackToSearch: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = BonvoyColors.White),
+        shape = RoundedCornerShape(12.dp),
     ) {
-        Text(
-            "ERROR: ${error::class.java.name}",
-            color = BonvoyColors.White,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-        )
-        Text(
-            error.stackTraceToString(),
-            color = BonvoyColors.White,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 10.sp,
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-        )
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ErrorOutline,
+                contentDescription = null,
+                tint = BonvoyColors.Gold,
+                modifier = Modifier.size(40.dp),
+            )
+            Text(
+                ui.title,
+                style = MaterialTheme.typography.headlineMedium,
+                color = BonvoyColors.Ink,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                ui.body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = BonvoyColors.Grey,
+                textAlign = TextAlign.Center,
+            )
+            Button(
+                onClick = onRetry,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(4.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BonvoyColors.Ink),
+            ) {
+                Text("RETRY", style = MaterialTheme.typography.labelLarge)
+            }
+            OutlinedButton(
+                onClick = onBackToSearch,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+            ) {
+                Text("BACK TO HOTEL SEARCH", color = BonvoyColors.Ink, style = MaterialTheme.typography.labelLarge)
+            }
+            HorizontalDivider(color = BonvoyColors.Stone)
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text("SUPPORT DETAILS", style = MaterialTheme.typography.labelSmall, color = BonvoyColors.Grey)
+                ui.details.forEach { detail ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            detail.label,
+                            modifier = Modifier.width(88.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = BonvoyColors.Grey,
+                        )
+                        Text(
+                            detail.value,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp,
+                            ),
+                            color = BonvoyColors.Grey,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
