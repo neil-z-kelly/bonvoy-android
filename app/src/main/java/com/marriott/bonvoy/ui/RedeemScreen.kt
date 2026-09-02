@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -173,13 +174,13 @@ private fun RedemptionUnavailableCard(
                 ui.title,
                 style = MaterialTheme.typography.headlineMedium,
                 color = BonvoyColors.Ink,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
             )
             Text(
                 ui.body,
                 style = MaterialTheme.typography.bodyMedium,
                 color = BonvoyColors.Grey,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
             )
             Button(
                 onClick = onRetry,
