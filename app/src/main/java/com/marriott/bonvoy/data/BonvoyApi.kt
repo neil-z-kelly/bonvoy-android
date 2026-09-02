@@ -9,8 +9,35 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class BackendException(val statusCode: Int, val rawBody: String, url: String) :
-    IOException("HTTP $statusCode from $url\n$rawBody")
+/**
+ * A non-2xx response from the Bonvoy backend, with the structured error envelope
+ * (`error`, `message`, `code`, `requestId`) the API returns on failure.
+ */
+class BackendException(
+    val statusCode: Int,
+    val error: String,
+    val detail: String,
+    val code: String,
+    val requestId: String?,
+    url: String,
+) : IOException("HTTP $statusCode from $url: $error — $detail") {
+
+    val isServerError: Boolean get() = statusCode >= 500
+
+    companion object {
+        fun from(statusCode: Int, rawBody: String, url: String): BackendException {
+            val obj = runCatching { JSONObject(rawBody) }.getOrNull()
+            return BackendException(
+                statusCode = statusCode,
+                error = obj?.optString("error").orEmpty().ifBlank { "HTTP $statusCode" },
+                detail = obj?.optString("message").orEmpty().ifBlank { rawBody.trim().take(200) },
+                code = obj?.optString("code").orEmpty(),
+                requestId = obj?.optString("requestId")?.takeIf { it.isNotBlank() },
+                url = url,
+            )
+        }
+    }
+}
 
 data class RedemptionResult(
     val confirmation: String,
@@ -53,7 +80,7 @@ class BonvoyApi(private val baseUrl: String = BuildConfig.BACKEND_BASE_URL) {
         client.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
-                throw BackendException(response.code, text, url)
+                throw BackendException.from(response.code, text, url)
             }
             val obj = JSONObject(text)
             return RedemptionResult(
