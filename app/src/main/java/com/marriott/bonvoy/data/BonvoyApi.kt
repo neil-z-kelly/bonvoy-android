@@ -9,8 +9,34 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class BackendException(val statusCode: Int, val rawBody: String, url: String) :
-    IOException("HTTP $statusCode from $url\n$rawBody")
+class BackendException(
+    val statusCode: Int,
+    val rawBody: String,
+    url: String,
+    val errorName: String? = null,
+    val errorMessage: String? = null,
+    val errorCode: String? = null,
+    val requestId: String? = null,
+) : IOException("HTTP $statusCode from $url\n$rawBody") {
+    companion object {
+        fun fromResponse(statusCode: Int, rawBody: String, url: String): BackendException {
+            return try {
+                val body = JSONObject(rawBody)
+                BackendException(
+                    statusCode = statusCode,
+                    rawBody = rawBody,
+                    url = url,
+                    errorName = body.optString("error").takeIf { it.isNotBlank() },
+                    errorMessage = body.optString("message").takeIf { it.isNotBlank() },
+                    errorCode = body.optString("code").takeIf { it.isNotBlank() },
+                    requestId = body.optString("requestId").takeIf { it.isNotBlank() },
+                )
+            } catch (_: org.json.JSONException) {
+                BackendException(statusCode, rawBody, url)
+            }
+        }
+    }
+}
 
 data class RedemptionResult(
     val confirmation: String,
@@ -53,7 +79,7 @@ class BonvoyApi(private val baseUrl: String = BuildConfig.BACKEND_BASE_URL) {
         client.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
-                throw BackendException(response.code, text, url)
+                throw BackendException.fromResponse(response.code, text, url)
             }
             val obj = JSONObject(text)
             return RedemptionResult(
